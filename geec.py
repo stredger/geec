@@ -10,6 +10,9 @@ import json
 #
 #
 
+class MalformedRequestException(Exception): pass
+
+
 urls = {'newjob': '/job/new',
         'job': '/job/',
         'queue': '/queue/'}
@@ -19,8 +22,10 @@ urls = {'newjob': '/job/new',
 MASTER_SERVER = 'localhost:3000'
 
 
-def joinurl(base, tojoin):
-    pass
+def create_http_url(host, *args):
+    if '/' in host: raise MalformedRequestException('Bad Host: %s' % (host))
+    resource = ''.join(args)        
+    return 'http://' + host + resource
 
 
 def post_request(host, data, headers):
@@ -28,37 +33,36 @@ def post_request(host, data, headers):
 
 
 def new_job(username, key, jobname, jobfile):
-    url = 'http://' + MASTER_SERVER + urls['newjob']
+    url = create_http_url(MASTER_SERVER, urls['newjob'])
     data = {'user':username, 'key':key, 'data':jobfile, 'name':jobname}
     headers = {'content-type':'application/json'}
     return post_request(url, data=json.dumps(data), headers=headers)
 
 def job_status(username, key, jobname):
-    url = 'http://' + MASTER_SERVER + urls['job'] + jobname
+    url = create_http_url(MASTER_SERVER, urls['job'], jobname)
     data = {'user':username, 'key':key, 'name':jobname}
     headers = {'content-type':'application/json'}
     return post_request(url, data=json.dumps(data), headers=headers)
 
 def queue_status(username, key, queuename=''):
-    url = 'http://' + MASTER_SERVER + urls['queue'] + queuename
+    url = create_http_url(MASTER_SERVER, urls['queue'], queuename)
     data = {'user':username, 'key':key, 'queue':queuename}
     headers = {'content-type':'application/json'}
     return post_request(url, data=json.dumps(data), headers=headers)
 
 
 
-def main():
-    #new_job('cool-prog', 'coolman', 'stuff')
-    queue_status('butts', 'bigbutt')
-
-
 if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description='Geec: GEE Command Line Interface')
-    parser.add_argument('user', metavar='user', help='Gee username')
-    parser.add_argument('key', metavar='key', help='Gee key')
-    parser.add_argument('cmd', metavar='cmd', help='Command to run')
-    parser.parse_args()
-    
-    # parser.parse_args(sys.argv[1:])
-    #main()
+    try:
+        user = sys.argv[1]
+        key = sys.argv[2]
+        cmdlist = {'queuestat':queue_status, 'jobstat':job_status, 'free':queue_status, 'new':new_job}
+        cmd = cmdlist[sys.argv[3]]
+        args = sys.argv[4:]
+        cmd(user, key, *args)
+    except (IndexError, KeyError), e:
+        print 'geec.py <user> <key> <cmd> <args>'
+        print ' where <cmd> is: queuestat <queuename>'
+        print '                 jobstat <jobname>'
+        print '                 free'
+        print '                 new <jobname> <jobfile>'
