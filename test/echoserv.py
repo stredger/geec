@@ -1,7 +1,7 @@
 
 import socket
 
-port = 3000
+port = 9876
 resp = 'HTTP/1.0 200 OK\r\n\nnothin!'
 div = '---------------------------------'
 

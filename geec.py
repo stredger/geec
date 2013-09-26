@@ -6,7 +6,7 @@ import os
 import json
 
 # read request from command line args
-# 
+#
 #
 #
 
@@ -24,7 +24,7 @@ MASTER_SERVER = 'localhost:3000'
 
 def create_http_url(host, *args):
     if '/' in host: raise MalformedRequestException('Bad Host: %s' % (host))
-    resource = ''.join(args)        
+    resource = ''.join(args)
     return 'http://' + host + resource
 
 
@@ -34,7 +34,8 @@ def post_request(host, data, headers):
 
 def new_job(username, key, jobname, jobfile):
     url = create_http_url(MASTER_SERVER, urls['newjob'])
-    data = {'user':username, 'key':key, 'data':jobfile, 'name':jobname}
+    with open (jobfile, "r") as myfile:
+        data = {'user':username, 'key':key, 'data':myfile.read(), 'name':jobname}
     headers = {'content-type':'application/json'}
     return post_request(url, data=json.dumps(data), headers=headers)
 
