@@ -16,6 +16,7 @@ class MalformedRequestException(Exception): pass
 urls = {'newjob'    : '/job/new',
         'job'       : '/job/',
         'output'    : '/job/output/',
+        'stop'      : '/job/stop/',
         'queue'     : '/queue/'}
 
 
@@ -41,7 +42,15 @@ def new_job(username, key, jobname, jobfile):
     with open (jobfile, "r") as myfile:
         data = {'user':username, 'key':key, 'data':myfile.read(), 'name':jobname}
     headers = {'content-type':'application/json'}
-    return post_request(url, data=json.dumps(data), headers=headers)
+    r = post_request(url, data=json.dumps(data), headers=headers)
+
+    print r.text
+
+def stop_job(username, key, jobname):
+    url = create_http_url(MASTER_SERVER, urls['stop'], jobname)
+    data = {'user':username, 'key':key, 'name':jobname}
+    headers = {'content-type':'application/json'}
+    r = post_request(url, data=json.dumps(data), headers=headers)
 
 def job_output(username, key, jobname):
     url = create_http_url(MASTER_SERVER, urls['output'], jobname)
@@ -57,19 +66,28 @@ def job_status(username, key, jobname):
     headers = {'content-type':'application/json'}
     return post_request(url, data=json.dumps(data), headers=headers)
 
+
+
 def queue_status(username, key, queuename=''):
     url = create_http_url(MASTER_SERVER, urls['queue'], queuename)
     data = {'user':username, 'key':key, 'queue':queuename}
     headers = {'content-type':'application/json'}
-    return post_request(url, data=json.dumps(data), headers=headers)
-
+    r = get_request(url, data=json.dumps(data), headers=headers)
+    print r.text
 
 
 if __name__ == "__main__":
     try:
         user = sys.argv[1]
         key = sys.argv[2]
-        cmdlist = {'queuestat':queue_status, 'jobstat':job_status, 'free':queue_status, 'new':new_job, 'output': job_output}
+        cmdlist = {
+            'queuestat':    queue_status,
+            'jobstat':      job_status,
+            'free':         queue_status,
+            'new':          new_job,
+            'output':       job_output,
+            'stop':         stop_job
+        }
         cmd = cmdlist[sys.argv[3]]
         args = sys.argv[4:]
         cmd(user, key, *args)
@@ -79,3 +97,5 @@ if __name__ == "__main__":
         print '                 jobstat <jobname>'
         print '                 free'
         print '                 new <jobname> <jobfile>'
+        print '                 output <jobname> '
+        print '                 stop <jobname>'
